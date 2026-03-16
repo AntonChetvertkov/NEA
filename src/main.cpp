@@ -1,20 +1,28 @@
 #include <HardwareSerial.h>
 #include <TinyGPS++.h>
+#include <GyverOLED.h>
 
 #define GPS_RX 15
 #define GPS_TX 14
 
 HardwareSerial gpsSerial(2);
 TinyGPSPlus gps;
+GyverOLED<SSD1306_128x64, OLED_BUFFER> oled;
 
 void setup() {
     Serial.begin(115200);
+    oled.init();
+    oled.home();
+    oled.clear();
     gpsSerial.begin(9600, SERIAL_8N1, GPS_RX, GPS_TX);
-    Serial.println("NEO-7M GPS Test");
-    Serial.println("---------------");
+    oled.println("NEO-7M GPS Test");
+    oled.println("---------------");
+    oled.update();
 }
 
 void loop() {
+    oled.clear();
+    oled.home();
     while (gpsSerial.available()) {
         gps.encode(gpsSerial.read());
     }
@@ -23,18 +31,19 @@ void loop() {
     if (millis() - last > 1000) {
         last = millis();
 
-        Serial.printf("Satellites: %d\n", gps.satellites.value());
-        Serial.printf("Fix valid:  %s\n", gps.location.isValid() ? "YES" : "NO");
+        oled.println("Satellites: ", gps.satellites.value());
+        oled.println("Fix valid: ", gps.location.isValid() ? "YES" : "NO");
 
         if (gps.location.isValid()) {
-            Serial.printf("Lat:   %.6f\n", gps.location.lat());
-            Serial.printf("Lng:   %.6f\n", gps.location.lng());
-            Serial.printf("Alt:   %.2f m\n", gps.altitude.meters());
-            Serial.printf("Speed: %.2f km/h\n", gps.speed.kmph());
-            Serial.printf("HDOP:  %.2f\n", gps.hdop.hdop());
+            oled.println("Lat: ", gps.location.lat());
+            oled.println("Lng: ", gps.location.lng());
+            oled.println("Alt: ", gps.altitude.meters());
+            oled.println("Speed: ", gps.speed.kmph());
+            oled.println("HDOP: ", gps.hdop.hdop());
         } else {
-            Serial.println("Waiting for fix...");
+            oled.println("Waiting for fix...");
         }
-        Serial.println("---------------");
+        oled.println("---------------");
+        oled.update();
     }
 }
