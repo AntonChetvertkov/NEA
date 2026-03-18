@@ -1,56 +1,35 @@
-#include <HardwareSerial.h>
-#include <TinyGPS++.h>
 #include <GyverOLED.h>
 
-#define GPS_RX 15
-#define GPS_TX 14
-
-HardwareSerial gpsSerial(2);
-TinyGPSPlus gps;
 GyverOLED<SSD1306_128x64, OLED_BUFFER> oled;
 
+int ui_mode = 0; //0-just row; 1 menu; 2 - workout; 3 - log; 4 - About
+byte selected_index = 0;
+String options[4] = {" Just Row", " Workout", " Log", " About"};
+
+#define tUp 26
+#define tOk 25
+#define tDown 33
+
 void setup() {
-    Serial.begin(115200);
-    oled.init();
-    oled.home();
-    oled.setContrast(255);
-    // oled.clear();
-    // gpsSerial.begin(9600, SERIAL_8N1, GPS_RX, GPS_TX);
-    // oled.println("NEO-7M GPS Test");
-    // oled.println("---------------");
-    oled.println("ROWWELL-1-Starting up");
-    oled.update();
-    delay(10000);
+  // put your setup code here, to run once:
+  oled.init();
+  oled.setScale(2);
 
-
-}   
+  pinMode(26, INPUT);
+  pinMode(25, INPUT);
+  pinMode(33, INPUT);
+}
 
 void loop() {
   oled.clear();
   oled.home();
-    
-
-  while (gpsSerial.available()) {
-      gps.encode(gpsSerial.read());
-  }
-
-  static unsigned long last = 0;
-  if (millis() - last > 1000) {
-      last = millis();
-
-      oled.println("Satellites: "+ String(gps.satellites.value()));
-      oled.println("Fix valid: "+ String(gps.location.isValid() ? "YES" : "NO"));
-
-      if (gps.location.isValid()) {
-          oled.println("Lat: "+ String(gps.location.lat()));
-          oled.println("Lng: "+ String(gps.location.lng()));
-          oled.println("Alt: "+ String(gps.altitude.meters()));
-          oled.println("Speed: "+ String(gps.speed.kmph()));
-          oled.println("HDOP: "+ String(gps.hdop.hdop()));
-      } else {
-          oled.println("Waiting for fix...");
-      }
-      oled.println("---------------");
+  
+  for (int i = 0; i < 4; i++){
+    if (i == selected_index) oled.invertText(1);
+    else oled.invertText(0);
+    oled.println(options[i]);
   }
   oled.update();
+  if (digitalRead(tDown) == 1 && selected_index < 3) selected_index ++;
+  if (digitalRead(tUp) == 1 && selected_index > 0) selected_index --;
 }
