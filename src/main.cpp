@@ -208,6 +208,15 @@ void loop() {
       oled.setScale(2);
       break;
     }
+    default:{
+        oled.setScale(1);
+        oled.invertText(0);
+        oled.println("Not implemented yet");
+        oled.println("Press DOWN to exit");
+        if (digitalRead(tDown) == 1) ui_mode = 1;
+        oled.setScale(2);
+        break;
+    }
   }
   oled.update();
 }
