@@ -32,6 +32,11 @@ bool timerRunning = false;
 bool okWasPressed = false;
 unsigned long okPressedSince = 0;
 const unsigned long HOLD_MS = 800;
+
+
+//for split
+double curr_speed = 0.0, prev_speed_0 = 0, prev_speed_1 = 0.0, prev_speed_2 = 0.0, prev_speed_3 = 0.0, prev_speed_4 = 0.0;
+
 float maxAxis(GyroData &g) {
     float ax = fabsf(g.gyroX);
     float ay = fabsf(g.gyroY);
@@ -46,21 +51,29 @@ float maxAxis(GyroData &g) {
 TinyGPSPlus gnss;
 HardwareSerial gnssSerial(2);
 
-String calcSplit(float velocityKmh) {
-    if (velocityKmh <= 0.0f) {
-        return "--:--";
+String calcSplit() {
+    if (!gnss.speed.isValid()) return "--:--";
+
+    if (gnss.speed.isUpdated()) {
+        prev_speed_4 = prev_speed_3;
+        prev_speed_3 = prev_speed_2;
+        prev_speed_2 = prev_speed_1;
+        prev_speed_1 = prev_speed_0;
+        prev_speed_0 = curr_speed;
+        curr_speed = gnss.speed.mps();
     }
 
-    float velocityMs = velocityKmh / 3.6f;
-    float splitSeconds = 500.0f / velocityMs;
+    double avg = (curr_speed + prev_speed_0 + prev_speed_1 + prev_speed_2 + prev_speed_3 + prev_speed_4) / 6.0;
 
-    int minutes = (int)splitSeconds / 60;
-    int seconds = (int)splitSeconds % 60;
+    if (avg < 0.5) return "--:--";
 
-    String result = String(minutes) + ":";
-    if (seconds < 10) result += "0";
-    result += String(seconds);
+    int split_s = (int)(500.0 / avg);
+    int mins = split_s / 60;
+    int secs = split_s % 60;
 
+    String result = String(mins) + ":";
+    if (secs < 10) result += "0";
+    result += String(secs);
     return result;
 }
 
@@ -183,7 +196,7 @@ void loop() {
       oled.print("avg");
       
       oled.setScale(1);
-      String split = calcSplit(gnss.speed.kmph());
+      String split = calcSplit();
       oled.setCursor(75, 16);
       oled.print(split);
 
